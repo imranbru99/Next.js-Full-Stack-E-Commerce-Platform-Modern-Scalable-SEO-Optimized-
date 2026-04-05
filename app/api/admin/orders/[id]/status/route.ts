@@ -1,17 +1,18 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> } // 1. Define params as a Promise
 ) {
   try {
+    const { id } = await params; // 2. Await the params to get the ID
     const body = await req.json();
-    const { status } = body; // The new status sent from the dashboard (e.g., "PROCESSING")
+    const { status } = body; 
 
-    // 1. Fetch the current order to check its existing status and items
+    // 3. Fetch current order with its items
     const currentOrder = await prisma.order.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: { items: true },
     });
 
@@ -19,26 +20,31 @@ export async function PATCH(
       return new NextResponse("Order not found", { status: 404 });
     }
 
-    // 2. Logic: Only decrease stock if moving from PENDING to PROCESSING
+    // 4. Logic: Deduct stock when moving from PENDING to PROCESSING
     const shouldDeductStock = currentOrder.status === "PENDING" && status === "PROCESSING";
 
-    // 3. Start a Transaction
     const updatedOrder = await prisma.$transaction(async (tx) => {
-      // Update the Order status first
+      // Update the Order status
       const order = await tx.order.update({
-        where: { id: params.id },
+        where: { id: id },
         data: { status },
       });
 
-      // If our condition is met, loop through items and deduct stock
       if (shouldDeductStock) {
         for (const item of currentOrder.items) {
-          await tx.variant.update({
+          // A. Update Variant Stock
+          const updatedVariant = await tx.variant.update({
             where: { id: item.variantId },
             data: {
-              stock: {
-                decrement: item.quantity,
-              },
+              stock: { decrement: item.quantity },
+            },
+          });
+
+          // B. Sync Product Master Stock (Keep both in sync)
+          await tx.product.update({
+            where: { id: updatedVariant.productId },
+            data: {
+              stock: { decrement: item.quantity },
             },
           });
         }
