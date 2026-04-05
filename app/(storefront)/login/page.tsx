@@ -32,16 +32,15 @@ export default function LoginPage() {
         setIsLoading(false);
       } else if (response?.ok) {
         // 2. Success! Now fetch the session to check the role
-        const session = await getSession();
+          const session = await getSession();
 
-        // 3. Conditional Redirection
-        if (session?.user?.role === "ADMIN") {
-          router.push("/admin/dashboard");
-        } else {
-          router.push("/");
-        }
-
-        router.refresh();
+          if (session?.user?.role === "ADMIN") {
+            router.push("/admin/dashboard");
+          } else {
+            // REDIRECT USER TO THEIR DASHBOARD
+            router.push("/dashboard");
+          }
+          router.refresh();
       }
     } catch (err) {
       setError("An unexpected error occurred.");
@@ -80,7 +79,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-6 py-4 rounded-2xl border-2 border-slate-50 bg-slate-50 focus:bg-white focus:border-black outline-none transition-all font-bold text-sm"
-              placeholder="admin@store.com"
+              placeholder="user@store.com"
             />
           </div>
 

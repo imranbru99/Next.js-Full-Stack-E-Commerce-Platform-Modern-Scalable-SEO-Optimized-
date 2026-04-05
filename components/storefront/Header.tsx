@@ -31,7 +31,7 @@ export default async function Header() {
 
           <div className="flex items-center gap-6">
             <SearchButton />
-            <Link href="/login">
+            <Link href="/dashboard">
               <User size={20} className="cursor-pointer hover:text-slate-500 transition-colors" />
             </Link>
             <CartIcon />

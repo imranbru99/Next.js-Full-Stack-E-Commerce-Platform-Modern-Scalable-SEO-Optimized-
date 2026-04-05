@@ -57,7 +57,7 @@ export default function SuccessPage() {
           </Link>
           
           <Link 
-            href="/orders/my-orders" 
+            href="/orders/track" 
             className="w-full py-4 text-slate-400 font-bold text-sm hover:text-black flex items-center justify-center gap-2"
           >
             Track Order <ArrowRight size={16} />
