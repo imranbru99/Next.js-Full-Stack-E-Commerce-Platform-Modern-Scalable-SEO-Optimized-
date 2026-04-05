@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id            String        @id @default(cuid())
+  name          String
+  slug          String        @unique
+  subcategories Subcategory[]
+  products      Product[]
+  blogs         Blog[]
+  createdAt     DateTime      @default(now())
+}
+
+model Subcategory {
+  id         String    @id @default(cuid())
+  name       String
+  slug       String    @unique
+  categoryId String
+  category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  products   Product[]
+  blogs         Blog[]
+  createdAt  DateTime  @default(now())
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  phone     String   @unique
+  email     String   @unique
+  password  String?
+  role      Role     @default(USER)
+  orders    Order[]
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Product {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  categoryId    String
+  category      Category     @relation(fields: [categoryId], references: [id])
+  subcategoryId String?
+  subcategory   Subcategory? @relation(fields: [subcategoryId], references: [id])
+  description String @db.LongText
+  basePrice   Float
+  status    String      @default("PENDING")
+  variants    Variant[]
+  stock        Int      @default(0)
+  initialStock Int      @default(0)
+  createdAt   DateTime  @default(now())
+}
+
+model Blog {
+  id          String    @id @default(cuid())
+  title        String
+  slug        String    @unique
+  categoryId    String
+  category      Category     @relation(fields: [categoryId], references: [id])
+  subcategoryId String?
+  subcategory   Subcategory? @relation(fields: [subcategoryId], references: [id])
+  description String
+  status    String      @default("PENDING")
+  imageUrl    String?
+  createdAt   DateTime  @default(now())
+}
+
+model Variant {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  color       String?
+  size        String?
+  stock       Int      @default(0)
+  price       Float?
+  imageUrl    String?
+  initialStock Int      @default(0)
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  userId    String
+  productId   String
+  user      User        @relation(fields: [userId], references: [id])
+  items     OrderItem[]
+  total     Float
+  address   String      @db.Text
+  shippingCharge  Float       @default(0)
+  phone     String
+  status    String      @default("PENDING")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  variantId String
+  quantity  Int
+  price     Float
+
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variant   Variant  @relation(fields: [variantId], references: [id])
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model StoreSettings {
+  id              String  @id @default("1")
+  storeName       String  @default("nextecommerce")
+  logoUrl         String?
+  faviconUrl      String?
+  googleAnalytics String?
+  metaPixel       String?
+  searchConsole   String?
+  currency        String?
+  currencySymbol   String?
+  metaDescription   String?
+  metaKeywords   String?
+}
