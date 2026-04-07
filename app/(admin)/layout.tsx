@@ -5,24 +5,34 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   Settings, ShoppingBag, LayoutDashboard, Users, CreditCard,
-  Layers, Sun, Moon, User, Menu, X, Bell, ChevronRight 
+  Layers, Sun, Moon, User, Menu, X, Bell, ChevronRight, FileText 
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false); // UI toggle state
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Sidebar Links Configuration
   const navItems = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-    { name: "Pos", href: "/admin/pos", icon: CreditCard },
+    { name: "Blogs", href: "/admin/blogs", icon: FileText },
+    { name: "POS", href: "/admin/pos", icon: CreditCard },
     { name: "Categories", href: "/admin/categories", icon: Layers },
     { name: "Products", href: "/admin/products", icon: ShoppingBag },
     { name: "Orders", href: "/admin/orders", icon: Users },
     { name: "Profile", href: "/admin/profile", icon: User },
     { name: "Settings", href: "/admin/settings", icon: Settings },
   ];
+
+  // Determine the active page name (handles sub-pages like /admin/products/new)
+  const activeItem = navItems.find(item => pathname === item.href || pathname.startsWith(item.href + '/'));
+  const activePageName = activeItem?.name || "Overview";
+
+  // Update Document Title dynamically
+  useEffect(() => {
+    document.title = `${activePageName} | NextEcommerce Admin`;
+  }, [activePageName]);
 
   return (
     <div className={`min-h-screen flex ${isDarkMode ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}>
@@ -45,7 +55,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Navigation */}
         <nav className="p-6 space-y-2">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link 
                 key={item.name}
@@ -95,7 +105,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {isSidebarOpen ? <X size={24}/> : <Menu size={24}/>}
             </button>
             <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">
-               {navItems.find(i => i.href === pathname)?.name || "Overview"}
+               {activePageName}
             </h2>
           </div>
 

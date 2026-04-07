@@ -8,6 +8,7 @@ export async function POST(req: Request) {
     const formData = await req.formData();
     const file = formData.get("file") as File;
     const slug = formData.get("slug") as string;
+    const type = formData.get("type") as string; // Check if it's a "blog" or standard upload
 
     if (!file) {
       return new NextResponse("No file uploaded", { status: 400 });
@@ -16,29 +17,36 @@ export async function POST(req: Request) {
     // 1. Convert file to Buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // 2. Generate YYYYMM folder name based on current date
+    // 2. Generate Date Variables
     const date = new Date();
     const yearMonth = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}`;
     
-    // 3. Define the path inside the Next.js public directory
-    const uploadDir = path.join(process.cwd(), "public", "uploads", yearMonth);
+    // 3. Determine the Path (Products vs Blogs)
+    let relativeDir = `uploads/${yearMonth}`; // DEFAULT: Product behavior remains identical
+    
+    if (type === "blog") {
+      relativeDir = `uploads/blog/${yearMonth}`; // BLOG: Goes to /uploads/blog/2026/
+    }
+
+    // 4. Define the path inside the Next.js public directory
+    const uploadDir = path.join(process.cwd(), "public", ...relativeDir.split("/"));
 
     // Ensure the directory exists (creates it if it doesn't)
     await fs.mkdir(uploadDir, { recursive: true });
 
-    // 4. Generate the custom filename
-    const randomString = Math.random().toString(36).substring(2, 8); // e.g. "x7b9z1"
-    const safeSlug = slug || "product";
+    // 5. Generate the custom filename
+    const randomString = Math.random().toString(36).substring(2, 8); 
+    const safeSlug = slug || (type === "blog" ? "blog-post" : "product");
     const filename = `${safeSlug}-${randomString}.webp`;
     const filepath = path.join(uploadDir, filename);
 
-    // 5. Convert to WebP and save to disk
+    // 6. Convert to WebP and save to disk
     await sharp(buffer)
-      .webp({ quality: 80 }) // 80% quality is great for web
+      .webp({ quality: 80 }) 
       .toFile(filepath);
 
-    // 6. Return the public URL to save in the database
-    const publicUrl = `/uploads/${yearMonth}/${filename}`;
+    // 7. Return the public URL to save in the database
+    const publicUrl = `/${relativeDir}/${filename}`;
     
     return NextResponse.json({ url: publicUrl });
 
